@@ -22,11 +22,15 @@
     <ClCompile Include="func.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="mybow.cpp" />
+    <ClCompile Include="mykmeans.cpp" />
     <ClCompile Include="mysurf.cpp" />
+    <ClCompile Include="mysvm.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="func.h" />
     <ClInclude Include="main.h" />
+    <ClInclude Include="mykmeans.h" />
+    <ClInclude Include="mysvm.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>

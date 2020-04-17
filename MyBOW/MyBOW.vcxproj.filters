@@ -27,12 +27,24 @@
     <ClCompile Include="mybow.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="mysvm.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="mykmeans.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="func.h">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="main.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="mysvm.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="mykmeans.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>
