@@ -1,7 +1,9 @@
 #pragma once
 #include <iostream>
+#include <fstream>
 #include <opencv2/opencv.hpp>
 #include <vector>
+#include "mykmeans.h"
 
 using namespace cv;
 using namespace std;
@@ -161,10 +163,6 @@ private:
 	Mat vocab;
 	Surf surf;
 
-	//Ptr<SURF> featureDecter;
-	Ptr<BOWKMeansTrainer> bowtrainer;
-	Ptr<BFMatcher> descriptorMacher;
-	Ptr<BOWImgDescriptorExtractor> bowDescriptorExtractor;
 
 	//构造训练集合
 	void make_train_set();

@@ -1,9 +1,13 @@
 #include "func.h"
 #include <opencv2/opencv.hpp>
 #include <opencv2\imgproc\types_c.h>
+#include <boost/filesystem.hpp>
+#include <boost/filesystem/fstream.hpp>
 
 using namespace cv;
 using namespace std;
+#define TRAIN_FOLDER "C:/Users/huangzb/source/repos/MyBOW/MyBOW/data/train_images/"
+#define DATA_FOLDER "C:/Users/huangzb/source/repos/MyBOW/MyBOW/data/"
 
 
 
@@ -19,14 +23,11 @@ string categorizer::remove_extention(string full_name)
 // 构造函数
 categorizer::categorizer(int _clusters)
 {
-    cout << "开始初始化..." << endl;
+    cout << "执行categorizer构造函数..." << endl;
     clusters = _clusters;
     //初始化指针
     int minHessian = 400;
     categories_size = 2;
-    bowtrainer = new BOWKMeansTrainer(clusters);
-    descriptorMacher = BFMatcher::create();
-
     //读取训练集
     make_train_set();
 }
@@ -37,28 +38,37 @@ void categorizer::make_train_set()
     cout << "读取训练集..." << endl;
     string categor;
     //递归迭代rescursive 直接定义两个迭代器：i为迭代起点（有参数），end_iter迭代终点
- 
+ //递归迭代rescursive 直接定义两个迭代器：i为迭代起点（有参数），end_iter迭代终点
+    for (boost::filesystem::recursive_directory_iterator i(TRAIN_FOLDER), end_iter; i != end_iter; i++)
+    {
+        // level == 0即为目录，因为TRAIN__FOLDER中设置如此
+        if (i.level() == 0)
+        {
+            // 将类目名称设置为目录的名称
+            if ((i->path()).filename().string() != ".DS_Store") {
+                categor = (i->path()).filename().string();
+                category_name.push_back(categor);
+
+            }
+        }
+        else {
+            // 读取文件夹下的文件。level 1表示这是一副训练图，通过multimap容器来建立由类目名称到训练图的一对多的映射
+            string filename = string(TRAIN_FOLDER) + categor + string("/") + (i->path()).filename().string();
+
+            if ((i->path()).filename().string() != ".DS_Store") {
+                Mat temp = imread(filename, 0);
+                pair<string, Mat> p(categor, temp);
+                //得到训练集
+                train_set.insert(p);
+            }
+            cout << "train_set.size()" << endl;
+            cout << train_set.size() << endl;//1,2,3
+        }
+
+    }
     cout << "发现 " << categories_size << "种类别物体..." << endl;
 }
-Mat categorizer::getMyMat(Mat mymat) {
 
-
-    vector<IPoint> ips1 = surf.GetAllFeatures(mymat);
-    std::cout << "ips1" << endl;
-    std::cout << ips1.size() << endl;
-    Mat test;//行 列
-    for (int t = 0; t < ips1.size(); t++) {
-        Mat tempmat(1, 64, CV_32F, ips1[t].descriptor);
-        test.push_back(tempmat);
-        //std::cout << "进入循环" << endl;
-        //float* value = ips1[t].descriptor;//读出第i行第j列像素值
-        //std::cout << " this->IPoints[t].descriptor" << endl;
-        //test.at<float>(0, t) = *value; //将第i行第j列像素值设置为128
-    }
-    std::cout << "循环外" << endl;
-    cout << test.size() << endl;//[1000 x 1]
-    return test;
-}
 Mat Mycluster(const Mat& _descriptors) {
     Mat labels, vocabulary;
     int K{ 4 }, attemps{ 100 };
@@ -73,7 +83,64 @@ Mat Mycluster(const Mat& _descriptors) {
 // 训练图片feature聚类，得出词典
 void categorizer::bulid_vacab()
 {
+    FileStorage vacab_fs(DATA_FOLDER "vocab.xml", FileStorage::READ);
     //如果之前已经生成好，就不需要重新聚类生成词典
+    if (vacab_fs.isOpened())
+    {
+        cout << "图片已经聚类，词典已经存在.." << endl;
+        vacab_fs.release();
+    }
+    else
+    {
+        //存放kmeans的输入矩阵，64*提取到的特征点
+        vector<IPoint>my_vocab_descriptors;
+        // 对于每一幅模板，提取SURF算子，存入到my_vocab_descriptors中
+        multimap<string, Mat> ::iterator i = train_set.begin();
+        for (; i != train_set.end(); i++)
+        {
+            Mat templ = (*i).second;
+            templ.convertTo(templ, CV_32F);
+            vector<IPoint> ips1 = surf.GetAllFeatures(templ);
+            //将每一张图的特征点放在总的里面
+            my_vocab_descriptors.insert(my_vocab_descriptors.end(), ips1.begin(), ips1.end());
+
+        }
+        cout << my_vocab_descriptors.size() << endl;
+        cout << "训练图片开始聚类..." << endl;
+        // 对ORB描述子进行聚类
+        cout << "vocab_descriptors" << endl;
+        cout << my_vocab_descriptors.size() << endl;//[64 x 21460]列 行87051   //17551
+
+        vector<vector<float>> my_data(my_vocab_descriptors.size());
+        //将vector<IPinot>类型和vector<vector<float>>进行转换
+        for (size_t i = 0; i < my_vocab_descriptors.size(); i++)
+        {
+            float *my_descriptor =my_vocab_descriptors[i].descriptor;
+            vector<float> my_temp(my_descriptor, my_descriptor+64);
+            my_data[i] = my_temp;
+           // my_data.insert(my_data.end(), my_temp.begin(), my_temp.end());
+        }
+
+        //使用mykmeans进行聚类
+        vector<int> best_labels;
+        vector<vector<float>> centers;
+        double compactness_measure{ 0. };
+        const int attemps{ 100 }, max_iter_count{ 100 };
+        const double epsilon{ 0.001 };
+        const int flags = ANN::KMEANS_RANDOM_CENTERS;
+        cout << my_data[0].size() << endl;//5571264
+        ANN::kmeans<float>(my_data, clusters, best_labels, centers, compactness_measure, max_iter_count, epsilon, attemps, flags);
+        
+        
+        //vocab = bowtrainer->cluster(vocab_descriptors);
+        cout << "聚类完毕，得出词典..." << endl;
+        cout << "vocab" << endl;
+        cout << centers.size() << endl;//5571264
+        //以文件格式保存词典
+        FileStorage file_stor(DATA_FOLDER "vocab.xml", FileStorage::WRITE);
+        file_stor << "vocabulary" << centers;
+        file_stor.release();
+    }
    
 }
 

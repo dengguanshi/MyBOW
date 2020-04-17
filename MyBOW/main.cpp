@@ -17,8 +17,8 @@ int main(void)
     //Í¼ÏñÑµÁ·º¯Êı
     train_data(mysurf);
     //Í¼ÏñÊ¶±ğº¯Êı
-    Mat output=my_bow(inputmat,mysurf);
-    imshow("output", output);
+    /*Mat output=my_bow(inputmat,mysurf);
+    imshow("output", output);*/
     system("pause");
     return 0;
 }

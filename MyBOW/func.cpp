@@ -9,14 +9,20 @@ using namespace cv::ml;
 
 double train_data(Surf mysurf)
 {
-    //categorizer my_surf_cate(1000);
-
+    int clusters = 100;
+    categorizer c(clusters);
+    //特征聚类
+    c.bulid_vacab();
+    //构造BOW
+    c.compute_bow_image();
+    //训练分类器
+    c.trainSvm();
 	return 0.0;
 }
 
 Mat my_bow(Mat inputmat, Surf mysurf)
 {
-    categorizer mycate(1000);
+    categorizer mycate(100);
 	mysurf.inputmat = inputmat; 
 	vector<IPoint>testmat= mysurf.GetAllFeatures(mysurf.inputmat);
 	cout << testmat.size()<< endl;
