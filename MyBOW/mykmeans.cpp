@@ -89,8 +89,8 @@ namespace ANN {
 		//指第一行的列数
 
 		int dims = data[0].size();
-		std::cout << "行数" << std::endl;
-		std::cout << dims << std::endl;
+		/*std::cout << "行数" << std::endl;
+		std::cout << dims << std::endl;*///64
 		//理想初始聚类中心
 		attempts = std::max(attempts, 1);
 		//分配输出矩阵的长度

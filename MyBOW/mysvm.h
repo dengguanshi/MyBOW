@@ -1,100 +1,104 @@
-#pragma once
-#ifndef MACHINE_LEARNING_SVM_H
-#define MACHINE_LEARNING_SVM_H
-#include <vector>
-#include <utility>
-#include <iostream>
+#ifndef _LIBSVM_H
+#define _LIBSVM_H
 
-using namespace std;
+#define LIBSVM_VERSION 311
 
-class SVM {
-private:
-    std::vector<std::vector<double>> inData;//从文件都的数据
-    std::vector<std::vector<double>> trainData;//分割后的训练数据，里面包含真值
-    std::vector<std::vector<double>> testData;
-    unsigned long indim = 0;
-    std::vector<std::vector<double>> trainDataF;//真正的训练数据，特征
-    std::vector<std::vector<double>> testDataF;
-    std::vector<double> trainDataGT;//真值
-    std::vector<double> testDataGT;
-    std::vector<double> w;
-    std::vector<double> alpha;//拉格朗日乘数
-    double b;
-    std::vector<double> E;
-    double tol = 0.001;
-    double eps = 0.0005;
-    double C = 1.0;
-public:
-    void setTrainD(vector<std::vector<double>>& trainF, vector<double>& trainGT) { trainDataF = trainF; trainDataGT = trainGT; }
-    void setTestD(vector<std::vector<double>>& testF, vector<double>& testGT) { testDataGT = testGT; testDataGT = testGT; }
-    template <class T1, class T2>
-    friend double operator * (const vector<T1>& v1, const vector<T2>& v2);
-    template <class T1, class T2>
+#ifdef __cplusplus
+extern "C" {
+#endif
 
-    friend auto operator * (const T1& arg1, const vector<T2>& v2)->vector<decltype(arg1 + v2[0])>;
-    template <class T1, class T2>
-    friend auto operator + (const vector<T1>& v1, const vector<T2>& v2)->vector<decltype(v1[0] + v2[0])>;
+	extern int libsvm_version;
 
-    virtual void getData(const std::string& filename);
-    virtual void run();
-    void createTrainTest();
-    void SMO();
-    int SMOTakeStep(int& i1, int& i2);
-    int SMOExamineExample(int i2);
-    double kernel(std::vector<double>&, std::vector<double>&);
-    double computeE(int& i);
-    std::pair<double, double> SMOComputeOB(int& i1, int& i2, double& L, double& H);
-    void initialize();
-    void train();
-    double predict(const std::vector<double>& inputData);
-};
+	struct svm_node
+	{
+		int index;
+		double value;
+	};
 
-template <class T1, class T2>
-double operator * (const vector<T1>& v1, const vector<T2>& v2) {
-    if (v1.size() != v2.size()) {
-        cout << "two vector must have same size." << endl;
-        throw v1.size() != v2.size();
-    }
-    if (v1.empty()) {
-        cout << "vector must not empty." << endl;
-        throw v1.empty();
-    }
-    decltype(v1[0] * v2[0]) re = 0;
-    for (int i = 0; i < v1.size(); ++i) {
-        re += v1[i] * v2[i];
-    }
-    return re;
+	struct svm_problem
+	{
+		int l;
+		double* y;
+		struct svm_node** x;
+	};
+
+	enum { C_SVC, NU_SVC, ONE_CLASS, EPSILON_SVR, NU_SVR };	/* svm_type */
+	enum { LINEAR, POLY, RBF, SIGMOID, PRECOMPUTED }; /* kernel_type */
+
+	struct svm_parameter
+	{
+		int svm_type;
+		int kernel_type;
+		int degree;	/* for poly */
+		double gamma;	/* for poly/rbf/sigmoid */
+		double coef0;	/* for poly/sigmoid */
+
+		/* these are for training only */
+		double cache_size; /* in MB */
+		double eps;	/* stopping criteria */
+		double C;	/* for C_SVC, EPSILON_SVR and NU_SVR */
+		int nr_weight;		/* for C_SVC */
+		int* weight_label;	/* for C_SVC */
+		double* weight;		/* for C_SVC */
+		double nu;	/* for NU_SVC, ONE_CLASS, and NU_SVR */
+		double p;	/* for EPSILON_SVR */
+		int shrinking;	/* use the shrinking heuristics */
+		int probability; /* do probability estimates */
+	};
+
+	//
+	// svm_model
+	// 
+	struct svm_model
+	{
+		struct svm_parameter param;	/* parameter */
+		int nr_class;		/* number of classes, = 2 in regression/one class svm */
+		int l;			/* total #SV */
+		struct svm_node** SV;		/* SVs (SV[l]) */
+		double** sv_coef;	/* coefficients for SVs in decision functions (sv_coef[k-1][l]) */
+		double* rho;		/* constants in decision functions (rho[k*(k-1)/2]) */
+		double* probA;		/* pariwise probability information */
+		double* probB;
+
+		/* for classification only */
+
+		int* label;		/* label of each class (label[k]) */
+		int* nSV;		/* number of SVs for each class (nSV[k]) */
+					/* nSV[0] + nSV[1] + ... + nSV[k-1] = l */
+		/* XXX */
+		int free_sv;		/* 1 if svm_model is created by svm_load_model*/
+					/* 0 if svm_model is created by svm_train */
+	};
+	/*
+	svm_train核心训练函数
+
+	*/
+	struct svm_model* svm_train(const struct svm_problem* prob, const struct svm_parameter* param);
+	void svm_cross_validation(const struct svm_problem* prob, const struct svm_parameter* param, int nr_fold, double* target);
+
+	int svm_save_model(const char* model_file_name, const struct svm_model* model);
+	struct svm_model* svm_load_model(const char* model_file_name);
+
+	int svm_get_svm_type(const struct svm_model* model);
+	int svm_get_nr_class(const struct svm_model* model);
+	void svm_get_labels(const struct svm_model* model, int* label);
+	double svm_get_svr_probability(const struct svm_model* model);
+
+	double svm_predict_values(const struct svm_model* model, const struct svm_node* x, double* dec_values);
+	double svm_predict(const struct svm_model* model, const struct svm_node* x);
+	double svm_predict_probability(const struct svm_model* model, const struct svm_node* x, double* prob_estimates);
+
+	void svm_free_model_content(struct svm_model* model_ptr);
+	void svm_free_and_destroy_model(struct svm_model** model_ptr_ptr);
+	void svm_destroy_param(struct svm_parameter* param);
+
+	const char* svm_check_parameter(const struct svm_problem* prob, const struct svm_parameter* param);
+	int svm_check_probability_model(const struct svm_model* model);
+
+	void svm_set_print_string_function(void (*print_func)(const char*));
+
+#ifdef __cplusplus
 }
+#endif
 
-template <class T1, class T2>
-auto operator * (const T1& arg1, const vector<T2>& v2)->vector<decltype(arg1* v2[0])> {
-
-
-    if (v2.empty()) {
-        cout << "vector must not empty." << endl;
-        throw v2.empty();
-    }
-    vector<decltype(arg1* v2[0])> re(v2.size());
-    for (int i = 0; i < v2.size(); ++i) {
-        re[i] = arg1 * v2[i];
-    }
-    return re;
-}
-template <class T1, class T2>
-auto operator + (const vector<T1>& v1, const vector<T2>& v2) ->vector<decltype(v1[0] + v2[0])> {
-
-    if (v1.size() != v2.size()) {
-        cout << "two vector must have same size." << endl;
-        throw v1.size() != v2.size();
-    }
-    if (v1.empty()) {
-        cout << "vector must not empty." << endl;
-        throw v1.empty();
-    }
-    vector<decltype(v1[0] + v2[0])> re(v1.size());
-    for (int i = 0; i < v1.size(); ++i) {
-        re[i] = v1[i] + v2[i];
-    }
-    return re;
-}
-#endif //MACHINE_LEARNING_SVM_H
+#endif /* _LIBSVM_H */

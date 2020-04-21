@@ -4,11 +4,16 @@
 #include <opencv2/opencv.hpp>
 #include <vector>
 #include "mykmeans.h"
-
+#include "mysvm.h"
+#include <opencv2\core\types_c.h>
+#pragma warning(disable:4996);
 using namespace cv;
 using namespace std;
 
-
+const int DEFAULT_LABEL_VALUE = -1;
+enum { DISTANCE_TYPE_EUCLIDEAN };
+enum { CLUSTERING_FLANN, CLUSTERING_KMEANS };
+enum { MATCHING_FLANN, MATCHING_EUCLIDEAN };
 
 
 //特征点类
@@ -141,6 +146,219 @@ public:
 	vector<IPoint> GetAllFeatures(Mat img);
 };
 
+
+
+class FeatureVector
+{
+public:
+	FeatureVector();
+	~FeatureVector();
+	FeatureVector(int _size)
+	{
+		resize(_size);
+	}
+	FeatureVector(const std::vector<float>& _data)
+	{
+		set(_data);
+	}
+	FeatureVector(const FeatureVector& cpy);
+
+	void set(const std::vector<float>& _data)
+	{
+		data = _data;
+		size = data.size();
+	}
+	void get(std::vector<float>& _data)
+	{
+		_data = data;
+	}
+	size_t getSize()
+	{
+		return size;
+	}
+	bool empty()
+	{
+		return !size;
+	}
+	void resize(size_t _size)
+	{
+		size = _size;
+		data.resize(size);
+	}
+	void clear()
+	{
+		data.clear();
+	}
+	void zero()
+	{
+		for (size_t i = 0; i < size; ++i)
+			data[i] = 0;
+	}
+
+	float& operator[](int idx)
+	{
+		assert(idx < (int)size&& idx >= 0);
+		return this->data[idx];
+	}
+	double operator[](int idx) const
+	{
+		assert(idx < (int)size&& idx >= 0);
+		return this->data[idx];
+	}
+
+	FeatureVector& operator=(const FeatureVector& rhs);
+	FeatureVector& operator=(const std::vector<float> rhs);
+	void normalize();
+	double distance(const FeatureVector& fv, int type = DISTANCE_TYPE_EUCLIDEAN);
+
+	//TODO this should be protected
+	std::vector<float> data;
+	size_t size;
+};
+//直方图设计类
+class FeatureHistogram : public FeatureVector
+{
+public:
+	FeatureHistogram();
+	~FeatureHistogram();
+	FeatureHistogram(int _size, int _label = DEFAULT_LABEL_VALUE)
+	{
+		resize(_size);
+		label = _label;
+	}
+	FeatureHistogram(const std::vector<float>& _data, int _label = DEFAULT_LABEL_VALUE)
+	{
+		set(_data);
+		label = _label;
+	}
+	FeatureHistogram(const FeatureHistogram& cpy);
+
+	void setLabel(int _label)
+	{
+		label = _label;
+	}
+	int getLabel()
+	{
+		return label;
+	}
+	void addAt(int index, float value = 1.0f)
+	{
+		data[index] += value;
+	}
+
+	int label;
+};
+//分类器基类
+class BaseClassifier
+{
+public:
+	BaseClassifier();
+	~BaseClassifier();
+	BaseClassifier(const BaseClassifier& cpy);
+	BaseClassifier& operator=(const BaseClassifier& rhs);
+	/*
+	virtual bool train() = 0;
+	virtual double predict(const FeatureHistogram& hist, bool decisionFunc) = 0;
+	virtual void save(const std::string& fileName) = 0;
+	virtual void load(const std::string& fileName) = 0;
+			*/
+	void add(const FeatureHistogram& trainFeature);
+	void set(const std::vector<FeatureHistogram>& _trainData);
+
+
+	std::vector<FeatureHistogram> trainData;
+	size_t size;
+	size_t length;
+	vector<int>svm_labels;
+	vector<vector<float>>svm_trainData;
+};
+//分类器参数类
+class SVMParameters
+{
+public:
+	~SVMParameters() {};
+	SVMParameters(const SVMParameters& cpy);
+	SVMParameters(
+		/*int _type = CvSVM::NU_SVC,
+		int _kernel = CvSVM::RBF,*/
+		double _degree = 3,
+		double _gamma = 1,
+		double _coef0 = 0.5,
+		double _C = 1,
+		double _cache = 256,
+		double _eps = 0.0001,
+		double _nu = 0.5,
+		double _p = 0.2,
+		int _termType = CV_TERMCRIT_ITER + CV_TERMCRIT_EPS,
+		int _iterations = 1000,
+		int _shrinking = 0,
+		int _probability = 0,
+		int _weight = 0,
+		int _kFold = 10);
+
+
+	SVMParameters& operator=(const SVMParameters& rhs);
+
+	void setDefault();
+	void set(/*int _type = CvSVM::NU_SVC,
+		int _kernel = CvSVM::RBF,*/
+		double _degree = 3,
+		double _gamma = 1,
+		double _coef0 = 0.5,
+		double _C = 1,
+		double _cache = 256,
+		double _eps = 0.0001,
+		double _nu = 0.5,
+		double _p = 0.2,
+		int _termType = CV_TERMCRIT_ITER + CV_TERMCRIT_EPS,
+		int _iterations = 1000,
+		int _shrinking = 0,
+		int _probability = 0,
+		int _weight = 0,
+		int _kFold = 10);
+
+	int type;
+	int kernel;
+	double degree;
+	double gamma;
+	double coef0;
+	double C;
+	double cache;
+	double eps;
+	double nu;
+	double p;
+	int termType;
+	int iterations;
+	int shrinking;
+	int probability;
+	int weight;
+	int kFold;
+};
+//分类器类
+class SVMClassifier : public BaseClassifier
+{
+public:
+	SVMClassifier();
+	SVMClassifier(const SVMClassifier& cpy);
+	SVMClassifier(const SVMParameters& _params, bool _autoTrain = true);
+	~SVMClassifier() {};
+
+	void setAuto(bool _autoTrain) { autoTrain = _autoTrain; }
+	bool isAuto() { return autoTrain; }
+
+	void setParameters(const SVMParameters& _params, bool _autoTrain = true);
+
+	bool train();
+	double predict(const FeatureHistogram& hist, bool decisionFunc = true);
+	void save(const std::string& fileName);
+	void load(const std::string& fileName);
+
+private:
+	//CvSVM model;
+	//CvSVMParams params;
+	bool autoTrain;
+	int kFold;
+};
 //快速构建bow算法类
 class categorizer
 {
@@ -160,6 +378,14 @@ private:
 	//用SURF特征构造视觉词库的聚类数目
 	int clusters;
 	//存放训练图片词典
+	vector<IPoint>my_vocab_descriptors;
+
+	vector<vector<float>> main_data;
+	vector<vector<float>> main_centers;
+	//存放每张图的bof
+	vector<vector<float>> main_bof;
+	//存放索引
+	vector<int> main_labels;
 	Mat vocab;
 	Surf surf;
 
@@ -184,10 +410,23 @@ public:
 	void category_By_svm(Mat input_pic);
 	Mat Mycluster(const Mat& _descriptors);
 	String mysvm(vector<IPoint>& testmat);
+
+	//获取bof函数
+	bool getBoF(vector<vector<float>>& input, FeatureHistogram& hist, bool normalized);
+	//计算最短的距离
+	int mymatch(vector<vector<float>>& input);
+	float mydistance(vector<float>& fv, vector<float>& col);
 };
+
+
+
 //函数声明
-double train_data(Surf mysurf);
-Mat my_bow(Mat inputmat, Surf mysurf);
+double train_data(Surf mysurf, categorizer c);
+Mat my_bow(Mat inputmat, Surf mysurf, categorizer c);
 Mat ReadFloatImg(const char* szFilename);
 
 Mat ReadFloatImg(const char* szFilename);
+
+
+
+
