@@ -67,8 +67,8 @@ void categorizer::make_train_set()
 
     }
     categories_size = category_name.size();
-    cout << category_name[0]<< endl;//1,2,3
-    cout << category_name[1] << endl;//1,2,3
+    cout << category_name[0]<< endl;//1
+    cout << category_name[1] << endl;//2
     cout << "发现 " << categories_size << "种类别物体..." << endl;
 }
 
@@ -224,6 +224,7 @@ void categorizer::compute_bow_image()
     FeatureHistogram hist;
     SVMClassifier svm;
     multimap<string, Mat> ::iterator i = train_set.begin();
+    int j = 0;
     for (; i != train_set.end(); i++)
     {
         
@@ -242,22 +243,33 @@ void categorizer::compute_bow_image()
 
             getBoF(bof_descriptor, hist, true);
             int n = atoi((*i).first.c_str());
+            cout << "* i first==" << endl;
+            cout << (*i).first.c_str() << endl;
+            cout << n << endl;
             hist.setLabel(n);
+            //main_labels.push_back(n); j++;
             svm.add(hist);
     }
 
     cout << "train   bag of words..." << endl;
-    cout << svm.length<< endl;//4
+    cout << svm.length<< endl;//20
     cout << svm.size << endl;//3
     cout << svm.trainData.size() << endl;//3
     svm_problem prob;
     prob.l = svm.size;        // 训练样本数
-    prob.y = new double[svm.size];
+    prob.y = new double[categories_size];
     prob.x = new svm_node * [svm.size];
     main_labels = svm.svm_labels;
+ /*   prob.y[0] = 0;
+    prob.y[1] = 1;
+    prob.y[2] = 2;*/
     svm_node* node = new svm_node[svm.size * (1 + svm.length)];
-    memcpy(prob.y, &main_labels[0], main_labels.size() * sizeof(main_labels[0]));
-    for (int i = 0; i < svm.size; i++) {
+    for (int k=0; k < main_labels.size();k++) {
+        prob.y[k] = main_labels[k];
+        cout << k << "k=" << endl;
+    }
+    //memcpy(prob.y, &main_labels[0], main_labels.size() * sizeof(main_labels[0]));
+    for (int i = 0; i < categories_size; i++) {
         cout << prob.y[i];
         cout << "    ";
     }
@@ -321,14 +333,14 @@ void categorizer::compute_bow_image()
     }
 
     getBoF(bof_descriptor, predict_hist, true);
-    svm_node* input = new svm_node[predict_hist.data.size()];
-    for (int k = 0; k < predict_hist.data.size(); k++)
-    {
-        input[k].index = 2;
-        input[k].value = predict_hist.data[k];
-    }
-
-    input[predict_hist.data.size()+1].index = -1;
+    svm_node* input = new svm_node[2];
+    cout << "                                                 ";
+    cout<< predict_hist.size <<endl;
+        for (int l = 0; l < predict_hist.data.size();l++) {
+            input[l].index = l+1;
+            input[l].value = predict_hist.data[l];
+        }
+    input[predict_hist.data.size()].index = -1;
     int predictValue=svm_predict(svmModel, input);
     cout << svmModel->label[1] << endl;//0 -2147483648
     cout << svmModel->label << endl;//0000022E52370110
