@@ -64,6 +64,7 @@ double train_data(Surf mysurf, categorizer c)
     //训练分类器 
     c.trainSvm();
 
+    c.category_By_svm(Mat());
 
 	return 0.0;
 }
@@ -78,110 +79,34 @@ Mat my_bow(Mat inputmat, Surf mysurf, categorizer c)
 	return Mat();
 }
 String  categorizer::mysvm(vector<IPoint>& testmat) {
-
+    cout << "mysvm()" << endl;
+    FeatureHistogram predict_hist;
     svm_model* svmModel = svm_load_model("model.txt");
-    vector<vector<float>> my_mat_data(testmat.size());
-    for (size_t i = 0; i < testmat.size(); i++)
+    vector<vector<float>> bof_descriptor(testmat.size());
+    //将vector<IPinot>类型和vector<vector<float>>进行转换
+    for (int i = 0; i < testmat.size(); i++)
     {
-        float* my_testmat = my_vocab_descriptors[i].descriptor;
-        vector<float> my_temp(my_testmat, my_testmat + 64);
-        my_mat_data[i] = my_temp;
+        float* my_bof_descriptor = testmat[i].descriptor;
+        vector<float> my_temp(my_bof_descriptor, my_bof_descriptor + 64);
+        bof_descriptor[i] = my_temp;
+        cout << i << endl;
         // my_data.insert(my_data.end(), my_temp.begin(), my_temp.end());
     }
-
-    svm_problem problem;
-    problem.l = clusters;//有多少数据
-    problem.x = new svm_node * [clusters];//特征矩阵
-    problem.y = new double[clusters];//对应的标签
-    for (int i = 0; i < clusters; ++i) {
-        problem.x[i] = new svm_node[64 + 1];
-        for (int j = 0; j < 64; ++j) {
-            problem.x[i][j].index = j + 1;
-            problem.x[i][j].value = main_data[i][j];
-        }
-        problem.x[i][64].value = -1;
-        problem.y[i] = main_labels[i];
+    getBoF(bof_descriptor, predict_hist, true);
+    svm_node* input = new svm_node[2];
+    cout << "                                                 ";
+    cout << predict_hist.size << endl;//2
+    for (int l = 0; l < predict_hist.data.size(); l++) {
+        input[l].index = l + 1;
+        input[l].value = predict_hist.data[l];
     }
+    input[predict_hist.data.size()].index = -1;
+    cout << "  ================================== svm_predict " << endl;
+    int predictValue = svm_predict(svmModel, input);
+    cout << "这幅图的类别id是： ";
+    cout << predictValue << endl;// 2
 
-   // int predictValue = svm_predict(svmModel, input);
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    //int sign = 0;
-    //float best_score = -2.0f;
-    //float curConfidence;
-    ////Mat threshold_image;
-    //string prediction_category;
-    //category_name.push_back("qq");
-    //category_name.push_back("ww");
-
-    //Mat test(1, 1000, CV_32F);//行 列
-  
-    //Mat src_img(1, testmat.size(), CV_32F);
-    //for (int t = 0; t < testmat.size(); t++) {
-    //    //Mat tempmat(1, 64, CV_32F, ips1[t].descriptor);
-    //    //test.push_back(tempmat);
-    //    float *value = testmat[t].descriptor;//读出第i行第j列像素值
-    //    src_img.at<float>(0, t) = *value; //将第i行第j列像素值设置为128
-    // }
-    //resize(src_img, test, test.size(), 0, 0, INTER_LINEAR);
-
-
-    ////featureDecter->detect(gray_pic, kp);
-    ////bowDescriptorExtractor->compute(gray_pic, kp, test);
-
-
-    //for (int i = 0; i < categories_size; i++)
-    //{
-    //    string cate_na = category_name[i];
-    //    string f_path = string("C:\\Users\\huangzb\\source\\repos\\ConsoleApplication10\\ConsoleApplication10\\data\\")+cate_na + string("SVM.xml");
-    //    FileStorage svm_fs(f_path, FileStorage::READ);
-    //    //读取SVM.xml
-    //    if (svm_fs.isOpened())
-    //    {
-    //        svm_fs.release();
-    //        Ptr<SVM> st_svm = Algorithm::load<SVM>(f_path.c_str());
-    //        if (sign == 0)
-    //        {
-    //            cout << "进入if循环" << endl;
-    //            cout << test << endl;
-    //            float score_Value = st_svm->predict(test, noArray(), true);
-    //            float class_Value = st_svm->predict(test, noArray(), false);
-    //            sign = (score_Value < 0.0f) == (class_Value < 0.0f) ? 1 : -1;
-    //        }
-    //        curConfidence = sign * st_svm->predict(test, noArray(), true);
-    //    }
-    //    else
-    //    {
-    //        cout << "找不到xml文件" << endl;
-    //    }
-    //    if (curConfidence > best_score)
-    //    {
-    //        best_score = curConfidence;
-    //        prediction_category = cate_na;
-    //    }
-   
-    //}
-    //cout << "这张图属于:" << prediction_category << endl;
-
-	return "5";
+	return predictValue+"";
 }
 
 

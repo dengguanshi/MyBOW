@@ -371,9 +371,9 @@ private:
 	multimap<string, Mat> train_set;
 	// 训练得到的SVM
 	//Ptr<SVM>* stor_svms;
-	//类目名称，也就是TRAIN_FOLDER设置的目录名
+	//类目名称，每个文件夹的名称，图片的类名
 	vector<string> category_name;
-	//类目数目
+	//类目数目，图片的类别的数量
 	int categories_size;
 	//用SURF特征构造视觉词库的聚类数目
 	int clusters;

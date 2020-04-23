@@ -193,13 +193,12 @@ int main(void)
 	int clusters = 20;
 	categorizer c(clusters);
     //²âÊÔÊäÈëÍ¼Æ¬
-    Mat inputmat= ReadFloatImg("C:\\Users\\huangzb\\source\\repos\\TrainData\\TrainData\\testpic\\hz1.jpg");
+    Mat inputmat= ReadFloatImg("C:\\Users\\huangzb\\source\\repos\\MyBOW\\MyBOW\\data\\test_image\\100.png");
     //Í¼ÏñÑµÁ·º¯Êı
     train_data(mysurf,c);
     //Í¼ÏñÊ¶±ğº¯Êı
-
-    Mat output=my_bow(inputmat,mysurf,  c);
-    imshow("output", output);
+    /*Mat output=my_bow(inputmat,mysurf,  c);
+    imshow("output", output);*/
     system("pause");
     return 0;
 }

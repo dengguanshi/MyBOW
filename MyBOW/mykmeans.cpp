@@ -81,16 +81,12 @@ namespace ANN {
 		CHECK(flags == KMEANS_RANDOM_CENTERS);
 		//获取输入矩阵长度
 		int N = data.size();
-		std::cout << "矩阵长度" << std::endl;
-		std::cout << N << std::endl;//455
 		//矩阵长度需要大过指定聚类时划分为几类；
 		CHECK(K > 0 && N >= K);
 
 		//指第一行的列数
 
 		int dims = data[0].size();
-		/*std::cout << "行数" << std::endl;
-		std::cout << dims << std::endl;*///64
 		//理想初始聚类中心
 		attempts = std::max(attempts, 1);
 		//分配输出矩阵的长度
