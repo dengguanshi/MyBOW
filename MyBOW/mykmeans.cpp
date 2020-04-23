@@ -82,7 +82,7 @@ namespace ANN {
 		//获取输入矩阵长度
 		int N = data.size();
 		std::cout << "矩阵长度" << std::endl;
-		std::cout << N << std::endl;
+		std::cout << N << std::endl;//455
 		//矩阵长度需要大过指定聚类时划分为几类；
 		CHECK(K > 0 && N >= K);
 

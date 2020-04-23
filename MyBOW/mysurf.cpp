@@ -12,9 +12,9 @@ IntegralImg::IntegralImg(Mat img)
 	integral(this->Original, this->Integral);
 	this->Width = img.cols;
 	this->Height = img.rows;
-	cout << "this->Width" << endl;
+	cout << "this->Width" << endl;//174 原图160x222 35.5kb
 	cout << this->Width << endl;
-	cout << "this->Height" << endl;
+	cout << "this->Height" << endl;//224
 	cout << this->Height << endl;
 }
 //计算积分图像 A-B-C+D计算左上角起始点指定的矩形内的像素总和坐标和大小

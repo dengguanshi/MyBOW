@@ -62,13 +62,11 @@ void categorizer::make_train_set()
                 train_set.insert(p);
             }
             cout << "train_set.size()" << endl;
-            cout << train_set.size() << endl;//1,2,3
+            cout << train_set.size() << endl;//for{1,2,3}
         }
 
     }
     categories_size = category_name.size();
-    cout << category_name[0]<< endl;//1
-    cout << category_name[1] << endl;//2
     cout << "发现 " << categories_size << "种类别物体..." << endl;
 }
 
@@ -108,11 +106,11 @@ void categorizer::bulid_vacab()
             my_vocab_descriptors.insert(my_vocab_descriptors.end(), ips1.begin(), ips1.end());
 
         }
-        cout << my_vocab_descriptors.size() << endl;
+        cout << my_vocab_descriptors.size() << endl;//455
         cout << "训练图片开始聚类..." << endl;
         // 对ORB描述子进行聚类
         cout << "vocab_descriptors" << endl;
-        cout << my_vocab_descriptors.size() << endl;//[64 x 21460]列 行87051   //17551
+        cout << my_vocab_descriptors.size() << endl;//455
 
         vector<vector<float>> my_data(my_vocab_descriptors.size());
         //将vector<IPinot>类型和vector<vector<float>>进行转换
@@ -132,21 +130,21 @@ void categorizer::bulid_vacab()
         const int attemps{ 100 }, max_iter_count{ 100 };
         const double epsilon{ 0.001 };
         const int flags = ANN::KMEANS_RANDOM_CENTERS;
-        cout << my_data[0].size() << endl;//5571264
+        cout << my_data[0].size() << endl;//64
         ANN::kmeans<float>(my_data, clusters, best_labels, centers, compactness_measure, max_iter_count, epsilon, attemps, flags);
 
         main_centers = centers;
-        cout << centers.size() << endl;//4
+        cout << centers.size() << endl;//20 
         cout << centers[0].size() << endl;//64
-        cout << best_labels.size() << endl;//783
+        cout << best_labels.size() << endl;//455
         //vocab = bowtrainer->cluster(vocab_descriptors);
         cout << "聚类完毕，得出词典..." << endl;
         for (int i = 0; i < best_labels.size();i++) {
             cout << best_labels[i];
             cout << "    ";
-        }
+        }//13    14    10    4    17    6    17    5    11    0    11    0 。。。
         cout << "vocab" << endl;
-        cout << centers.size() << endl;//4
+        cout << centers.size() << endl;//20
         cout << centers[0].size() << endl;//64
         //以文件格式保存词典
         FileStorage file_stor(DATA_FOLDER "vocab.xml", FileStorage::WRITE);
@@ -290,8 +288,8 @@ void categorizer::compute_bow_image()
 
 
 
-    std::cout << main_data.size() << "over\n";//338
-    std::cout << main_data[5].size() << "over\n";//64
+    std::cout << main_data.size() << "over\n";//455over
+    std::cout << main_data[5].size() << "over\n";//64over
     svm_model* svmModel;
     svm_parameter param;
     param.svm_type = C_SVC;
@@ -310,10 +308,10 @@ void categorizer::compute_bow_image()
     param.weight = NULL;
     param.weight_label = NULL;
 
-    cout << "  ================================== svm_train ";
+    cout << "  ================================== svm_train "<<endl;
     svmModel = svm_train(&prob, &param);
     svm_save_model("model.txt", svmModel);
-    cout << "  ================================== svm_save_model ";
+    cout << "  ================================== svm_save_model "<<endl;
 
     FeatureHistogram predict_hist;
     double result;
@@ -335,17 +333,18 @@ void categorizer::compute_bow_image()
     getBoF(bof_descriptor, predict_hist, true);
     svm_node* input = new svm_node[2];
     cout << "                                                 ";
-    cout<< predict_hist.size <<endl;
+    cout<< predict_hist.size <<endl;//2
         for (int l = 0; l < predict_hist.data.size();l++) {
             input[l].index = l+1;
             input[l].value = predict_hist.data[l];
         }
     input[predict_hist.data.size()].index = -1;
+    cout << "  ================================== svm_predict " << endl;
     int predictValue=svm_predict(svmModel, input);
-    cout << svmModel->label[1] << endl;//0 -2147483648
-    cout << svmModel->label << endl;//0000022E52370110
+    cout << svmModel->label[1] << endl;//2
+    cout << svmModel->label << endl;//0000025757E108A0
     cout << "  ================================== "; 
-    cout << predictValue << endl;// -2147483648
+    cout << predictValue << endl;// 2
 
 
 
